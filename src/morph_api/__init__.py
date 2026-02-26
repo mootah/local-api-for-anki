@@ -69,44 +69,24 @@ def tokenize_single_text(text: str, index: int) -> ScanResult:
                 },
                 "application/octet-stream": {
                     "schema": {"type": "string", "format": "binary"},
-                    "description": "Raw text or JSON bytes to tokenize"
+                    "description": "JSON bytes to tokenize (must match TokenizeRequest schema)"
                 }
             }
         }
     }
 )
 async def tokenize(request: Request) -> List[ScanResult]:
-    content_type = request.headers.get("Content-Type", "")
-    is_json_ct = "application/json" in content_type
-
     body = await request.body()
     if not body:
         raise HTTPException(status_code=422, detail="Empty body")
 
-    tokenize_request = None
     try:
-        # Try parsing as JSON
         data = json.loads(body)
-        if isinstance(data, dict):
-            try:
-                tokenize_request = TokenizeRequest.model_validate(data)
-            except ValidationError as e:
-                # If it's application/json, it should be a valid TokenizeRequest
-                if is_json_ct:
-                    raise HTTPException(status_code=422, detail=str(e))
-        elif is_json_ct:
-            raise HTTPException(status_code=422, detail="JSON body must be an object")
+        tokenize_request = TokenizeRequest.model_validate(data)
     except json.JSONDecodeError as e:
-        if is_json_ct:
-            raise HTTPException(status_code=422, detail=f"Invalid JSON: {str(e)}")
-
-    if tokenize_request is None:
-        # Fallback to raw bytes as text
-        try:
-            text = body.decode("utf-8")
-            tokenize_request = TokenizeRequest(text=text, scanLength=len(text))
-        except UnicodeDecodeError:
-            raise HTTPException(status_code=422, detail="Invalid JSON or UTF-8 content")
+        raise HTTPException(status_code=422, detail=f"Invalid JSON: {str(e)}")
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
     if isinstance(tokenize_request.text, str):
         return [tokenize_single_text(tokenize_request.text, 0)]
