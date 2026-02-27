@@ -9,14 +9,12 @@ from bs4 import BeautifulSoup
 import json
 import re
 
-HOST = "127.0.0.1"
-PORT = 19634
 SERVER_VER = 1
 YOMITAN_VER = "25.12.16.0"
 
 app = FastAPI()
-logger = logging.getLogger("uvicorn")
 
+logger = logging.getLogger("uvicorn.app")
 
 # Load the spaCy model
 try:
@@ -164,7 +162,7 @@ def _term_entries_internal(body: bytes) -> TermEntriesResponse:
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
-    logger.debug(f"term: {repr(term_request.term)}")
+    # logger.info(f"term: {repr(term_request.term)}")
     doc = nlp(term_request.term)
     dictionary_entries = []
 
@@ -238,8 +236,7 @@ async def term_entries(request: Request) -> TermEntriesResponse:
 
     return _term_entries_internal(body)
 
-def main():
-    uvicorn.run(app, host=HOST, port=PORT)
 
 if __name__ == "__main__":
-    main()
+    uvicorn.run(app, host="127.0.0.1", port=19634, log_level="debug")
+

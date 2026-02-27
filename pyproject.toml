@@ -8,20 +8,32 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "beautifulsoup4>=4.14.3",
     "fastapi>=0.133.1",
     "pip>=26.0.1",
+    "pyyaml>=6.0.3",
     "spacy>=3.8.11",
+    "taskipy>=1.14.1",
     "uvicorn>=0.41.0",
 ]
-
-[project.scripts]
-morph-api = "morph_api:main"
-
-[build-system]
-requires = ["uv_build>=0.9.7,<0.10.0"]
-build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
 ]
+
+[tool.taskipy.variables]
+host = "127.0.0.1"
+port = "19634"
+
+[tool.taskipy.tasks]
+dev = {
+  cmd = "uvicorn app.main:app --host {host} --port {port} --reload --log-level debug",
+  use_vars = true
+}
+server = {
+  cmd = "uvicorn app.main:app --host {host} --port {port} --workers 4 --log-level error",
+  use_vars = true
+}
+test = "uv run tests/test_api.py"
+

@@ -3,6 +3,9 @@
 
 This project provides a similar API to [yomitan-api](https://github.com/yomidevs/yomitan-api) for the annotation functionality of [asbplayer](https://github.com/killergerbah/asbplayer), based on [spaCy](https://github.com/explosion/spaCy)'s tokenizer.
 
+## Installation
+
+
 ## API
 
 ### `/serverVersion`
