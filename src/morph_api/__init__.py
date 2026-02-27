@@ -89,10 +89,10 @@ def tokenize_single_text(text: str, index: int) -> ScanResult:
     doc = nlp(text)
     content = []
     for token in doc:
-        if token.is_space:
-            continue
         # Use token.text to maintain original inflection
         content.append([TokenReading(text=token.text, reading="")])
+        if token.whitespace_:
+            content.append([TokenReading(text=" ", reading="")])
 
     return ScanResult(
         index=index,
@@ -148,6 +148,7 @@ def _term_entries_internal(body: bytes) -> TermEntriesResponse:
     except ValidationError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
+    print("term:", term_request.term)
     doc = nlp(term_request.term)
     dictionary_entries = []
 
@@ -157,7 +158,7 @@ def _term_entries_internal(body: bytes) -> TermEntriesResponse:
 
         source = TermSource(
             originalText=token.text,
-            transformedText=token.text,
+            transformedText=token.lower_,
             deinflectedText=token.lemma_,
             matchType="exact",
             matchSource="term",
@@ -166,7 +167,7 @@ def _term_entries_internal(body: bytes) -> TermEntriesResponse:
 
         headword = Headword(
             index=0,
-            term=token.text,
+            term=token.lower_,
             reading="",
             sources=[source],
             tags=[],
