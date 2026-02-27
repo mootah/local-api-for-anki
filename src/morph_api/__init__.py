@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, HTTPException
 from pydantic import BaseModel, ValidationError
 from typing import List, Union, Optional
+from functools import lru_cache
 import spacy
 import uvicorn
 import json
@@ -98,6 +99,21 @@ def tokenize_single_text(text: str, index: int) -> ScanResult:
         content=content
     )
 
+@lru_cache(maxsize=128)
+def _tokenize_internal(body: bytes) -> List[ScanResult]:
+    try:
+        data = json.loads(body)
+        tokenize_request = TokenizeRequest.model_validate(data)
+    except json.JSONDecodeError as e:
+        raise HTTPException(status_code=422, detail=f"Invalid JSON: {str(e)}")
+    except ValidationError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    if isinstance(tokenize_request.text, str):
+        return [tokenize_single_text(tokenize_request.text, 0)]
+    else:
+        return [tokenize_single_text(t, i) for i, t in enumerate(tokenize_request.text)]
+
 @app.post(
     "/tokenize",
     response_model=List[ScanResult],
@@ -120,41 +136,10 @@ async def tokenize(request: Request) -> List[ScanResult]:
     if not body:
         raise HTTPException(status_code=422, detail="Empty body")
 
-    try:
-        data = json.loads(body)
-        tokenize_request = TokenizeRequest.model_validate(data)
-    except json.JSONDecodeError as e:
-        raise HTTPException(status_code=422, detail=f"Invalid JSON: {str(e)}")
-    except ValidationError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+    return _tokenize_internal(body)
 
-    if isinstance(tokenize_request.text, str):
-        return [tokenize_single_text(tokenize_request.text, 0)]
-    else:
-        return [tokenize_single_text(t, i) for i, t in enumerate(tokenize_request.text)]
-
-@app.post(
-    "/termEntries",
-    response_model=TermEntriesResponse,
-    openapi_extra={
-        "requestBody": {
-            "content": {
-                "application/json": {
-                    "schema": TermEntriesRequest.model_json_schema()
-                },
-                "application/octet-stream": {
-                    "schema": {"type": "string", "format": "binary"},
-                    "description": "JSON bytes of the term (must match TermEntriesRequest schema)"
-                }
-            }
-        }
-    }
-)
-async def term_entries(request: Request) -> TermEntriesResponse:
-    body = await request.body()
-    if not body:
-        raise HTTPException(status_code=422, detail="Empty body")
-
+@lru_cache(maxsize=128)
+def _term_entries_internal(body: bytes) -> TermEntriesResponse:
     try:
         data = json.loads(body)
         term_request = TermEntriesRequest.model_validate(data)
@@ -211,6 +196,30 @@ async def term_entries(request: Request) -> TermEntriesResponse:
         dictionaryEntries=dictionary_entries,
         originalTextLength=len(term_request.term)
     )
+
+@app.post(
+    "/termEntries",
+    response_model=TermEntriesResponse,
+    openapi_extra={
+        "requestBody": {
+            "content": {
+                "application/json": {
+                    "schema": TermEntriesRequest.model_json_schema()
+                },
+                "application/octet-stream": {
+                    "schema": {"type": "string", "format": "binary"},
+                    "description": "JSON bytes of the term (must match TermEntriesRequest schema)"
+                }
+            }
+        }
+    }
+)
+async def term_entries(request: Request) -> TermEntriesResponse:
+    body = await request.body()
+    if not body:
+        raise HTTPException(status_code=422, detail="Empty body")
+
+    return _term_entries_internal(body)
 
 def main():
     uvicorn.run(app, host=HOST, port=PORT)
