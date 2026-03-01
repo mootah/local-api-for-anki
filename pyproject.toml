@@ -9,19 +9,24 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "beautifulsoup4>=4.14.3",
+    "cefrpy>=1.0.1",
     "fastapi>=0.133.1",
     "pip>=26.0.1",
     "pyyaml>=6.0.3",
     "spacy>=3.8.11",
-    "taskipy>=1.14.1",
     "uvicorn>=0.41.0",
+    "wordfreq>=3.1.1",
 ]
 
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
     "pytest>=8.0.0",
+    "taskipy>=1.14.1",
 ]
+
+[tool.taskipy.settings]
+use_vars = true
 
 [tool.taskipy.variables]
 host = "127.0.0.1"
