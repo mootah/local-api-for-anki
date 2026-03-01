@@ -27,7 +27,7 @@ The API backend is based on
    uv run task server
    ```
 
-   You can see the api referece from http://127.0.0.1:19634/docs
+   You can see the api reference from http://127.0.0.1:19634/docs
 
 ## For asbplayer annotation
 
