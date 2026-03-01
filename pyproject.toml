@@ -20,6 +20,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "pytest>=8.0.0",
 ]
 
 [tool.taskipy.variables]
@@ -27,13 +28,6 @@ host = "127.0.0.1"
 port = "19634"
 
 [tool.taskipy.tasks]
-dev = {
-  cmd = "uvicorn app.main:app --host {host} --port {port} --reload --log-level debug",
-  use_vars = true
-}
-server = {
-  cmd = "uvicorn app.main:app --host {host} --port {port} --workers 4 --log-level info --no-access-log",
-  use_vars = true
-}
-test = "uv run tests/test_api.py"
-
+dev = "uvicorn app.main:app --host {host} --port {port} --reload --log-level debug"
+server = "uvicorn app.main:app --host {host} --port {port} --workers 4 --log-level info --no-access-log"
+test = "pytest tests/"
