@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 
 def sanitize_text(text: str) -> str:
     # Remove HTML tags
+    text = text.replace("<br>", " ")
     soup = BeautifulSoup(text, "html.parser")
     text = soup.get_text()
     # Remove cloze deletions

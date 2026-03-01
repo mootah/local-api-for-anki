@@ -1,6 +1,7 @@
 # -*- coding:utf-8 -*-
-
+import re
 import json
+import urllib.parse
 from ..base import (WebService, register, export)
 
 
@@ -9,9 +10,24 @@ class LocalAPI(WebService):
 
     def __init__(self):
         super(LocalAPI, self).__init__()
+        self._local_word = ''
+
+    @property
+    def word(self):
+        return self._local_word
+
+    @word.setter
+    def word(self, value):
+        value = value.replace("<br>", " ")
+        value = re.sub(r'</?\w+[^>]*>', '', value)
+        self._local_word = value
+
+    @property
+    def _quote_word(self):
+        return urllib.parse.quote(self._local_word, safe='')
 
     def _get_from_api(self):
-        url = f'http://127.0.0.1:19634/fastwq/{self.quote_word}'
+        url = f'http://127.0.0.1:19634/fastwq/{self._quote_word}'
         data = self.get_response(url)
         try:
             response = json.loads(data)
@@ -44,4 +60,3 @@ class LocalAPI(WebService):
     @export('Frequency')
     def fld_frequency(self):
         return self._get_field('frequency')
-

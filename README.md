@@ -27,13 +27,17 @@ The API backend is based on
    uv run task server
    ```
 
+   You can see the api referece from http://127.0.0.1:19634/docs
+
 ## For asbplayer annotation
 
 1. In asbplayer, set the `Yomitan API URL` to `http://127.0.0.1:19634`.
 
 ## For FastWQ
 
-1. copy `addon/localapi.py` to your FastWQ addon directory.
+1. Open your FastWQ addon directory.
+2. Copy `addon/localapi.py` into `service/dict/`.
+3. Restart Anki.
 
 ## API
 
