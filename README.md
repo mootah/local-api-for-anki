@@ -1,15 +1,22 @@
 
-# Morph API for asbplayer annotation
+# Local API for English Sentence Mining
 
-This project provides a similar API to [yomitan-api](https://github.com/yomidevs/yomitan-api) for the annotation functionality of [asbplayer](https://github.com/killergerbah/asbplayer), based on [spaCy](https://github.com/explosion/spaCy)'s tokenizer.
+This project provides a similar API to [yomitan-api](https://github.com/yomidevs/yomitan-api) for the annotation functionality of [asbplayer](https://github.com/killergerbah/asbplayer), and a backfill API for [FastWordQuery](https://github.com/sirius-fan/FastWordQuery).
+
+The API backend is based on
+
+- [spaCy](https://github.com/explosion/spaCy)
+- [ipa-dict](https://github.com/open-dict-data/ipa-dict)
+- [wordfreq](https://github.com/rspeer/wordfreq)
+- [cefrpy](https://github.com/Maximax67/cefrpy)
 
 ## Installation
 
 1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/).
 2. Clone this repository:
    ```bash
-   git clone https://github.com/mootah/morph-api.git
-   cd morph-api
+   git clone https://github.com/mootah/local-api-for-anki.git
+   cd local-api-for-anki
    ```
 3. Initialize the project:
    ```bash
@@ -19,166 +26,24 @@ This project provides a similar API to [yomitan-api](https://github.com/yomidevs
    ```bash
    uv run task server
    ```
-5. In asbplayer, set the `Yomitan API URL` to `http://127.0.0.1:19634`.
+
+## For asbplayer annotation
+
+1. In asbplayer, set the `Yomitan API URL` to `http://127.0.0.1:19634`.
+
+## For FastWQ
+
+1. copy `addon/localapi.py` to your FastWQ addon directory.
 
 ## API
 
-### `/serverVersion`
+### Yomitan
 
-#### Request
+- `/serverVersion`
+- `/yomitanVersion`
+- `/tokenize`
+- `/termEntries`
 
-- method: `POST`
+### Fast Word Query
 
-#### Example
-
-- response (200):
-
-    ```
-    {
-        "version": 1
-    }
-    ```
-
-### `/yomitanVersion`
-
-#### Request
-
-- method: `POST`
-
-#### Example
-
-- response (200):
-
-    ```
-    {
-        "version": "<latest yomitan version>"
-    }
-    ```
-
-### `/tokenize`
-
-#### Request
-
-- method: `POST`
-- Content-Type: `application/json` or `application/octet-stream` (for JSON bytes)
-- body:
-    - `text`: `string|list[string]`
-    - `scanLength`: `int`
-
-#### Example
-
-- request:
-
-    ```
-    {
-        "text": "This is it.",
-        "scanLength": 10
-    }
-    ```
-
-- response (200):
-
-    ```
-    [
-        {
-            "id": "scan",
-            "source": "scanning-parser",
-            "dictionary": null,
-            "index": 0,
-            "content": [
-                [
-                    {
-                        "text": "This",
-                        "reading": ""
-                    }
-                ],
-                [
-                    {
-                        "text": "is",
-                        "reading": ""
-                    }
-                ],
-                [
-                    {
-                        "text": "it",
-                        "reading": ""
-                    }
-                ],
-                [
-                    {
-                        "text": ".",
-                        "reading": ""
-                    }
-                ]
-            ]
-        }
-    ]
-    ```
-
-### `/termEntries`
-
-#### Request
-
-- method: `POST`
-- Content-Type: `application/json` or `application/octet-stream` (for JSON bytes)
-- body:
-    - `term`: `string`
-
-#### Example
-
-- request:
-
-    ```
-    {
-        "term": "running"
-    }
-    ```
-
-- response (200):
-
-    ```
-    {
-        "dictionaryEntries": [
-            {
-                "type": "term",
-                "isPrimary": true,
-                "textProcessorRuleChainCandidates": [
-                    []
-                ],
-                "inflectionRuleChainCandidates": [],
-                "score": 0,
-                "frequencyOrder": 0,
-                "dictionaryIndex": 0,
-                "dictionaryAlias": "spaCy",
-                "sourceTermExactMatchCount": 1,
-                "matchPrimaryReading": false,
-                "maxOriginalTextLength": 7,
-                "headwords": [
-                    {
-                        "index": 0,
-                        "term": "running",
-                        "reading": "",
-                        "sources": [
-                            {
-                                "originalText": "running",
-                                "transformedText": "running",
-                                "deinflectedText": "run",
-                                "matchType": "exact",
-                                "matchSource": "term",
-                                "isPrimary": true
-                            }
-                        ],
-                        "tags": [],
-                        "wordClasses": [
-                            "VERB"
-                        ]
-                    }
-                ],
-                "definitions": [],
-                "frequencies": [],
-                "pronunciations": []
-            }
-        ],
-        "originalTextLength": 7
-    }
-    ```
+- `/fastwq/{word}`
