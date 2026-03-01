@@ -1,5 +1,7 @@
 from wordfreq import zipf_frequency
+from functools import lru_cache
 
+@lru_cache(maxsize=1024)
 def get_frequency_score(text):
     if not text:
         return "0"

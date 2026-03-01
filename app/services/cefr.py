@@ -1,6 +1,11 @@
 import re
+from functools import lru_cache
 from cefrpy import CEFRAnalyzer
 
+# Initialize analyzer once
+ANALYZER = CEFRAnalyzer()
+
+@lru_cache(maxsize=1024)
 def get_cefr_level(text):
     """Get CEFR level for text using CEFRAnalyzer"""
     if not text:
@@ -11,13 +16,10 @@ def get_cefr_level(text):
     if not words:
         return "-"
     
-    # Initialize CEFRAnalyzer
-    analyzer = CEFRAnalyzer()
-    
     # Get CEFR level for each word
     levels = []
     for word in words:
-        level = analyzer.get_average_word_level_CEFR(word)
+        level = ANALYZER.get_average_word_level_CEFR(word)
         if level:
             levels.append(int(level))
     
