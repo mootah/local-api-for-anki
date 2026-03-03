@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, HTTPException
 from typing import List
 from app.schemas.yomitan import ScanResult, TermEntriesResponse, TokenizeRequest, TermEntriesRequest
 from app.services.nlp import tokenize_text, get_term_entries
@@ -34,7 +34,6 @@ async def yomitan_version():
 async def tokenize(request: Request) -> List[ScanResult]:
     body = await request.body()
     if not body:
-        from fastapi import HTTPException
         raise HTTPException(status_code=422, detail="Empty body")
     return await tokenize_text(body)
 
@@ -58,6 +57,5 @@ async def tokenize(request: Request) -> List[ScanResult]:
 async def term_entries(request: Request) -> TermEntriesResponse:
     body = await request.body()
     if not body:
-        from fastapi import HTTPException
         raise HTTPException(status_code=422, detail="Empty body")
     return await get_term_entries(body)
