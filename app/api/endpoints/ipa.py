@@ -25,6 +25,13 @@ async def search_ipa(
         offset=offset
     )
 
+@router.get("/{word}", response_model=IPARecord)
+async def get_ipa(word: str):
+    record = await ipa_service.get_ipa_record(word)
+    if not record:
+        raise HTTPException(status_code=404, detail="Word not found")
+    return IPARecord(**record)
+
 @router.put("/{word}", response_model=IPARecord)
 async def update_ipa(word: str, ipa: IPAUpdate):
     success = await ipa_service.update_ipa(word, ipa.ipa)

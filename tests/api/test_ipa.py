@@ -13,7 +13,7 @@ def test_ipa_search():
     assert any(r["word"] == "apple" for r in data["results"])
 
 def test_ipa_crud():
-    word = "testword123"
+    word = "testword456"
     ipa = "test-ipa"
 
     # Create
@@ -35,6 +35,11 @@ def test_ipa_crud():
     assert response.status_code == 200
     assert response.json()["results"][0]["ipa"] == new_ipa
 
+    # Get single word
+    response = client.get(f"/ipa/{word}")
+    assert response.status_code == 200
+    assert response.json()["ipa"] == new_ipa
+
     # Delete
     response = client.delete(f"/ipa/{word}")
     assert response.status_code == 200
@@ -43,3 +48,19 @@ def test_ipa_crud():
     response = client.get("/ipa/search", params={"q": f"^{word}$"})
     assert response.status_code == 200
     assert response.json()["total"] == 0
+
+
+def test_ipa_get_word():
+    # Existing word
+    response = client.get("/ipa/apple")
+    assert response.status_code == 200
+    assert response.json()["word"] == "apple"
+
+    # Case insensitive
+    response = client.get("/ipa/APPLE")
+    assert response.status_code == 200
+    assert response.json()["word"] == "apple"
+
+    # Non-existing word
+    response = client.get("/ipa/nonexistentword123")
+    assert response.status_code == 404
