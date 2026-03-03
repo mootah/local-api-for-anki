@@ -24,6 +24,17 @@ class Headword(BaseModel):
     tags: List[dict]
     wordClasses: List[str]
 
+class Frequency(BaseModel):
+    index: int
+    headwordIndex: int
+    dictionary: str
+    dictionaryIndex: int
+    dictionaryAlias: str
+    hasReading: bool
+    frequency: Union[int, float]
+    displayValue: str
+    displayValueParsed: bool
+
 class DictionaryEntry(BaseModel):
     type: str
     isPrimary: bool
@@ -38,7 +49,7 @@ class DictionaryEntry(BaseModel):
     maxOriginalTextLength: int
     headwords: List[Headword]
     definitions: List[dict]
-    frequencies: List[dict]
+    frequencies: List[Frequency]
     pronunciations: List[dict]
 
 class TermEntriesResponse(BaseModel):
