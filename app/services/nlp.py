@@ -2,10 +2,11 @@ import spacy
 from functools import lru_cache
 from typing import List
 from app.schemas.yomitan import (
-    ScanResult, TokenReading, TermEntriesResponse, TermSource, Headword, DictionaryEntry
+    ScanResult, TokenReading, TermEntriesResponse, TermSource, Headword, DictionaryEntry, Frequency
 )
 from app.services.text import sanitize_text
 from app.services.ipa import get_word_pronunciations
+from app.services.freq import get_frequency_score
 
 # Load the spaCy model
 try:
@@ -98,6 +99,21 @@ def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
 
         pronunciations = [{"index": 0, "pronunciation": p} for p in ipa_list]
 
+        freq_score = get_frequency_score(token.text)
+        frequencies = [
+            Frequency(
+                index=0,
+                headwordIndex=0,
+                dictionary="WordFreq",
+                dictionaryIndex=0,
+                dictionaryAlias="WordFreq",
+                hasReading=True,
+                frequency=float(freq_score),
+                displayValue=freq_score,
+                displayValueParsed=False
+            )
+        ]
+
         entry = DictionaryEntry(
             type="term",
             isPrimary=True,
@@ -112,7 +128,7 @@ def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
             maxOriginalTextLength=len(originalText),
             headwords=[headword],
             definitions=[],
-            frequencies=[],
+            frequencies=frequencies,
             pronunciations=pronunciations
         )
         dictionary_entries.append(entry)

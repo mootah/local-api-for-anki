@@ -70,6 +70,13 @@ def test_term_entries(client):
     assert "pronunciation" in entry["pronunciations"][0]
     assert "/" not in entry["pronunciations"][0]["pronunciation"]
 
+    # Verify frequencies
+    assert len(entry["frequencies"]) > 0
+    freq = entry["frequencies"][0]
+    assert freq["dictionary"] == "WordFreq"
+    assert isinstance(freq["frequency"], (int, float))
+    assert freq["frequency"] > 0
+
 def test_term_entries_cache(client):
     payload = {"term": "walking"}
 
