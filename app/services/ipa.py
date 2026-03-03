@@ -1,32 +1,30 @@
 import re
-from functools import lru_cache
+import aiosqlite
 from pathlib import Path
+from typing import List, Optional
 from app.services.text import sanitize_text
 
-def load_ipa_dict():
-    ipa_dict = {}
-    # https://github.com/open-dict-data/ipa-dict
-    ipa_dict_file = Path(__file__).parent.parent / "data" / "en_US.txt"
-    try:
-        with open(ipa_dict_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                parts = line.strip().split('\t')
-                if len(parts) == 2:
-                    word = parts[0].lower()
-                    pronunciations = parts[1]
-                    # Remove outer slashes and split by ', '
-                    pronunciations = pronunciations.replace("/", "").split(", ")
-                    ipa_dict[word] = pronunciations
-    except FileNotFoundError:
-        # Fallback or log error
-        pass
-    return ipa_dict
+DB_PATH = Path(__file__).parent.parent / "data" / "ipa.db"
 
-# Load the file once per server start
-IPA_DICT = load_ipa_dict()
+class IPADatabase:
+    _instance = None
+    _db = None
 
-@lru_cache(maxsize=1024)
-def get_word_pronunciations(word: str):
+    @classmethod
+    async def get_db(cls):
+        if cls._db is None:
+            cls._db = await aiosqlite.connect(DB_PATH)
+            await cls._db.create_function("regexp", 2, lambda x, y: 1 if re.search(x, y) else 0)
+            cls._db.row_factory = aiosqlite.Row
+        return cls._db
+
+    @classmethod
+    async def close(cls):
+        if cls._db is not None:
+            await cls._db.close()
+            cls._db = None
+
+async def get_word_pronunciations(word: str) -> List[str]:
     """
     Returns a list of IPA pronunciations for a given word,
     with slashes removed. Returns an empty list if not found.
@@ -35,8 +33,6 @@ def get_word_pronunciations(word: str):
         return []
 
     lower_word = word.lower()
-    ipa = None
-    # Create candidates based on word ending
     candidates = []
     if lower_word.endswith(("'s", "s'")):
         candidates = [
@@ -52,32 +48,30 @@ def get_word_pronunciations(word: str):
     else:
         candidates = [lower_word]
 
-    # Check IPA_DICT
+    db = await IPADatabase.get_db()
     for candidate in candidates:
-        ipa = IPA_DICT.get(candidate)
-        if ipa:
-            break
+        async with db.execute("SELECT ipa FROM ipa_dict WHERE word = ?", (candidate,)) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                ipa_str = row["ipa"]
+                return [p.strip() for p in ipa_str.split(",")]
 
-    return ipa if ipa is not None else []
+    return []
 
-@lru_cache(maxsize=1024)
-def get_ipa(text):
+async def get_ipa(text: str) -> List[List[str]]:
     text = sanitize_text(text)
     words = re.findall(r"\b[\w'.,]+", text)
     ipa_parts = []
     for word in words:
-        ipa = get_word_pronunciations(word)
-
+        ipa = await get_word_pronunciations(word)
         # Fallback
         if not ipa:
             ipa = [word]
         ipa_parts.append(ipa)
-
     return ipa_parts
 
-@lru_cache(maxsize=1024)
-def get_ipa_for_term(term):
-    ipa_parts = get_ipa(term)
+async def get_ipa_for_term(term: str) -> str:
+    ipa_parts = await get_ipa(term)
     if not ipa_parts:
         return ""
 
@@ -87,10 +81,46 @@ def get_ipa_for_term(term):
         # For multiple words, take the first pronunciation of each word
         return "/" + " ".join(i[0] for i in ipa_parts) + "/"
 
-@lru_cache(maxsize=1024)
-def get_ipa_for_sentence(sentence):
-    ipa_parts = get_ipa(sentence)
+async def get_ipa_for_sentence(sentence: str) -> str:
+    ipa_parts = await get_ipa(sentence)
     if not ipa_parts:
         return ""
 
     return " ".join(i[0] for i in ipa_parts)
+
+# CRUD Operations
+
+async def create_ipa(word: str, ipa: str):
+    db = await IPADatabase.get_db()
+    try:
+        await db.execute("INSERT INTO ipa_dict (word, ipa) VALUES (?, ?)", (word.lower(), ipa))
+        await db.commit()
+        return True
+    except aiosqlite.IntegrityError:
+        return False
+
+async def update_ipa(word: str, ipa: str):
+    db = await IPADatabase.get_db()
+    async with db.execute("UPDATE ipa_dict SET ipa = ? WHERE word = ?", (ipa, word.lower())) as cursor:
+        await db.commit()
+        return cursor.rowcount > 0
+
+async def delete_ipa(word: str):
+    db = await IPADatabase.get_db()
+    async with db.execute("DELETE FROM ipa_dict WHERE word = ?", (word.lower(),)) as cursor:
+        await db.commit()
+        return cursor.rowcount > 0
+
+async def search_ipa(query: str, limit: int = 10, offset: int = 0):
+    db = await IPADatabase.get_db()
+    # Use REGEXP for regex search
+    sql = "SELECT word, ipa FROM ipa_dict WHERE word REGEXP ? LIMIT ? OFFSET ?"
+    async with db.execute(sql, (query, limit, offset)) as cursor:
+        rows = await cursor.fetchall()
+
+    count_sql = "SELECT COUNT(*) FROM ipa_dict WHERE word REGEXP ?"
+    async with db.execute(count_sql, (query,)) as cursor:
+        total_row = await cursor.fetchone()
+        total = total_row[0]
+
+    return [dict(row) for row in rows], total

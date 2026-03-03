@@ -17,13 +17,13 @@ except OSError:
     spacy_download("en_core_web_sm")
     nlp = spacy.load("en_core_web_sm")
 
-def tokenize_single_text(text: str, index: int) -> ScanResult:
+async def tokenize_single_text(text: str, index: int) -> ScanResult:
     text = sanitize_text(text)
     doc = nlp(text)
     content = []
     for token in doc:
         # Use token.text to maintain original inflection
-        ipa_list = get_word_pronunciations(token.text)
+        ipa_list = await get_word_pronunciations(token.text)
         reading = ipa_list[0] if ipa_list else ""
         content.append([TokenReading(text=token.text, reading=reading)])
         if token.whitespace_:
@@ -34,8 +34,7 @@ def tokenize_single_text(text: str, index: int) -> ScanResult:
         content=content
     )
 
-@lru_cache(maxsize=128)
-def tokenize_text(body_bytes: bytes) -> List[ScanResult]:
+async def tokenize_text(body_bytes: bytes) -> List[ScanResult]:
     import json
     from app.schemas.yomitan import TokenizeRequest
     from fastapi import HTTPException
@@ -50,12 +49,14 @@ def tokenize_text(body_bytes: bytes) -> List[ScanResult]:
         raise HTTPException(status_code=422, detail=str(e))
 
     if isinstance(tokenize_request.text, str):
-        return [tokenize_single_text(tokenize_request.text, 0)]
+        return [await tokenize_single_text(tokenize_request.text, 0)]
     else:
-        return [tokenize_single_text(t, i) for i, t in enumerate(tokenize_request.text)]
+        results = []
+        for i, t in enumerate(tokenize_request.text):
+            results.append(await tokenize_single_text(t, i))
+        return results
 
-@lru_cache(maxsize=128)
-def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
+async def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
     import json
     from app.schemas.yomitan import TermEntriesRequest
     from fastapi import HTTPException
@@ -86,7 +87,7 @@ def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
             isPrimary=True
         )
 
-        ipa_list = get_word_pronunciations(token.text)
+        ipa_list = await get_word_pronunciations(token.text)
         reading = ipa_list[0] if ipa_list else ""
         headword = Headword(
             index=0,

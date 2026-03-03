@@ -14,8 +14,8 @@ async def fast_word_query(query: str):
     """
     return FastWQResponse(
         query=query,
-        ipa_word=get_ipa_for_term(query),
-        ipa_sentence=get_ipa_for_sentence(query),
+        ipa_word=await get_ipa_for_term(query),
+        ipa_sentence=await get_ipa_for_sentence(query),
         cefr=get_cefr_level(query),
         frequency=get_frequency_score(query)
     )

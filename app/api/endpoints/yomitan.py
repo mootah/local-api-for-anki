@@ -36,7 +36,7 @@ async def tokenize(request: Request) -> List[ScanResult]:
     if not body:
         from fastapi import HTTPException
         raise HTTPException(status_code=422, detail="Empty body")
-    return tokenize_text(body)
+    return await tokenize_text(body)
 
 @router.post(
     "/termEntries",
@@ -60,4 +60,4 @@ async def term_entries(request: Request) -> TermEntriesResponse:
     if not body:
         from fastapi import HTTPException
         raise HTTPException(status_code=422, detail="Empty body")
-    return get_term_entries(body)
+    return await get_term_entries(body)
