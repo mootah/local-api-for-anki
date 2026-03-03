@@ -19,6 +19,27 @@ def test_tokenize(client):
     assert len(data) > 0
     assert data[0]["index"] == 0
 
+    # Verify that reading is populated if a word is in the dictionary
+    # 'test' should be in en_US.txt
+    test_token = None
+    for res in data:
+        for content_list in res["content"]:
+            for tr in content_list:
+                if tr["text"] == "test":
+                    test_token = tr
+                    break
+
+    if test_token:
+        assert test_token["reading"] != ""
+        assert "/" not in test_token["reading"]
+
+    # Verify whitespace/punctuation reading is empty
+    for res in data:
+        for content_list in res["content"]:
+            for tr in content_list:
+                if tr["text"].strip() == "" or tr["text"] in ".,!":
+                    assert tr["reading"] == ""
+
 def test_tokenize_cache(client):
     payload = {"text": "This is a test cache.", "scanLength": 20}
 
@@ -39,7 +60,15 @@ def test_term_entries(client):
     assert "dictionaryEntries" in data
     assert data["originalTextLength"] == 7
     assert len(data["dictionaryEntries"]) > 0
-    assert data["dictionaryEntries"][0]["headwords"][0]["term"] == "running"
+
+    entry = data["dictionaryEntries"][0]
+    assert entry["headwords"][0]["term"] == "running"
+
+    # Verify reading and pronunciations
+    assert entry["headwords"][0]["reading"] != ""
+    assert len(entry["pronunciations"]) > 0
+    assert "pronunciation" in entry["pronunciations"][0]
+    assert "/" not in entry["pronunciations"][0]["pronunciation"]
 
 def test_term_entries_cache(client):
     payload = {"term": "walking"}

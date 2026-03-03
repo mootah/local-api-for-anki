@@ -26,37 +26,50 @@ def load_ipa_dict():
 IPA_DICT = load_ipa_dict()
 
 @lru_cache(maxsize=1024)
+def get_word_pronunciations(word: str):
+    """
+    Returns a list of IPA pronunciations for a given word,
+    with slashes removed. Returns an empty list if not found.
+    """
+    if not word or not any(c.isalnum() for c in word):
+        return []
+
+    lower_word = word.lower()
+    ipa = None
+    # Create candidates based on word ending
+    candidates = []
+    if lower_word.endswith(("'s", "s'")):
+        candidates = [
+            lower_word,
+            lower_word.replace("'", ""),
+            lower_word[:-2]   # remove 's
+        ]
+    elif lower_word.endswith((".", ",")):
+        candidates = [
+            lower_word,
+            lower_word[:-1]
+        ]
+    else:
+        candidates = [lower_word]
+
+    # Check IPA_DICT
+    for candidate in candidates:
+        ipa = IPA_DICT.get(candidate)
+        if ipa:
+            break
+
+    return ipa if ipa is not None else []
+
+@lru_cache(maxsize=1024)
 def get_ipa(text):
     text = sanitize_text(text)
     words = re.findall(r"\b[\w'.,]+", text)
     ipa_parts = []
     for word in words:
-        lower_word = word.lower()
-        ipa = None
-        # Create candidates based on word ending
-        candidates = []
-        if lower_word.endswith(("'s", "s'")):
-            candidates = [
-                lower_word,
-                lower_word.replace("'", ""),
-                lower_word[:-2]   # remove 's
-            ]
-        elif lower_word.endswith((".", ",")):
-            candidates = [
-                lower_word,
-                lower_word[:-1]
-            ]
-        else:
-            candidates = [lower_word]
-
-        # Check IPA_DICT
-        for candidate in candidates:
-            ipa = IPA_DICT.get(candidate)
-            if ipa:
-                break
+        ipa = get_word_pronunciations(word)
 
         # Fallback
-        if ipa is None:
+        if not ipa:
             ipa = [word]
         ipa_parts.append(ipa)
 

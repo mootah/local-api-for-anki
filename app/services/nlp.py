@@ -5,6 +5,7 @@ from app.schemas.yomitan import (
     ScanResult, TokenReading, TermEntriesResponse, TermSource, Headword, DictionaryEntry
 )
 from app.services.text import sanitize_text
+from app.services.ipa import get_word_pronunciations
 
 # Load the spaCy model
 try:
@@ -21,7 +22,9 @@ def tokenize_single_text(text: str, index: int) -> ScanResult:
     content = []
     for token in doc:
         # Use token.text to maintain original inflection
-        content.append([TokenReading(text=token.text, reading="")])
+        ipa_list = get_word_pronunciations(token.text)
+        reading = ipa_list[0] if ipa_list else ""
+        content.append([TokenReading(text=token.text, reading=reading)])
         if token.whitespace_:
             content.append([TokenReading(text=" ", reading="")])
 
@@ -82,14 +85,18 @@ def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
             isPrimary=True
         )
 
+        ipa_list = get_word_pronunciations(token.text)
+        reading = ipa_list[0] if ipa_list else ""
         headword = Headword(
             index=0,
             term=token.text,
-            reading="",
+            reading=reading,
             sources=[source],
             tags=[],
             wordClasses=[token.pos_]
         )
+
+        pronunciations = [{"index": 0, "pronunciation": p} for p in ipa_list]
 
         entry = DictionaryEntry(
             type="term",
@@ -106,7 +113,7 @@ def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
             headwords=[headword],
             definitions=[],
             frequencies=[],
-            pronunciations=[]
+            pronunciations=pronunciations
         )
         dictionary_entries.append(entry)
 
