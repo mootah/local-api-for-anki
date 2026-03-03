@@ -124,3 +124,12 @@ async def search_ipa(query: str, limit: int = 10, offset: int = 0):
         total = total_row[0]
 
     return [dict(row) for row in rows], total
+
+
+async def get_ipa_record(word: str) -> Optional[dict]:
+    db = await IPADatabase.get_db()
+    async with db.execute("SELECT word, ipa FROM ipa_dict WHERE word = ?", (word.lower(),)) as cursor:
+        row = await cursor.fetchone()
+        if row:
+            return dict(row)
+    return None

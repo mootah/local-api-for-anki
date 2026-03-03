@@ -39,3 +39,4 @@ dev = "uvicorn app.main:app --host {host} --port {port} --reload --log-level deb
 server = "uvicorn app.main:app --host {host} --port {port} --workers 4 --log-level info --no-access-log"
 test = "pytest tests/"
 init-db = "python scripts/init_db.py"
+export-db = "python scripts/export-db.py"
