@@ -92,7 +92,7 @@ async def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
             wordClasses=[token.pos_]
         )
 
-        pronunciations = [{"index": 0, "pronunciation": p} for p in ipa_list]
+        pronunciations = [{"index": i, "pronunciation": p} for i, p in enumerate(ipa_list)]
 
         freq_score = get_frequency_score(token.text)
         frequencies = [
