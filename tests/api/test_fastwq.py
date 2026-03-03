@@ -1,4 +1,5 @@
 import pytest
+import time
 from fastapi.testclient import TestClient
 
 def test_fastwq_word(client: TestClient):
@@ -30,7 +31,6 @@ def test_fastwq_sentence(client: TestClient):
     assert "ˈaɪ ˈeɪt ən ˈæpəɫ" in data["ipa_sentence"]
 
 def test_fastwq_caching(client: TestClient):
-    import time
     query = "expensive"
 
     # First call

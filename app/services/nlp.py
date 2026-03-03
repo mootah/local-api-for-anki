@@ -1,8 +1,12 @@
-import spacy
+import json
 from functools import lru_cache
+import spacy
 from typing import List
+from fastapi import HTTPException
+from pydantic import ValidationError
 from app.schemas.yomitan import (
-    ScanResult, TokenReading, TermEntriesResponse, TermSource, Headword, DictionaryEntry, Frequency
+    ScanResult, TokenReading, TermEntriesResponse, TermSource, Headword, DictionaryEntry, Frequency,
+    TokenizeRequest, TermEntriesRequest
 )
 from app.services.text import sanitize_text
 from app.services.ipa import get_word_pronunciations
@@ -35,11 +39,6 @@ async def tokenize_single_text(text: str, index: int) -> ScanResult:
     )
 
 async def tokenize_text(body_bytes: bytes) -> List[ScanResult]:
-    import json
-    from app.schemas.yomitan import TokenizeRequest
-    from fastapi import HTTPException
-    from pydantic import ValidationError
-
     try:
         data = json.loads(body_bytes)
         tokenize_request = TokenizeRequest.model_validate(data)
@@ -57,11 +56,6 @@ async def tokenize_text(body_bytes: bytes) -> List[ScanResult]:
         return results
 
 async def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
-    import json
-    from app.schemas.yomitan import TermEntriesRequest
-    from fastapi import HTTPException
-    from pydantic import ValidationError
-
     try:
         data = json.loads(body_bytes)
         term_request = TermEntriesRequest.model_validate(data)
