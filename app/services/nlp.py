@@ -30,9 +30,10 @@ async def tokenize_single_text(text: str, index: int) -> ScanResult:
     content = []
     for token in doc:
         # Use token.text to maintain original inflection
-        ipa_list = await get_word_pronunciations(token.text)
-        reading = ipa_list[0] if ipa_list else ""
-        content.append([TokenReading(text=token.text, reading=reading)])
+        # ipa_list = await get_word_pronunciations(token.text)
+        # reading = ipa_list[0] if ipa_list else ""
+        # content.append([TokenReading(text=token.text, reading=reading)])
+        content.append([TokenReading(text=token.text, reading="")])
         if token.whitespace_:
             content.append([TokenReading(text=" ", reading="")])
 
