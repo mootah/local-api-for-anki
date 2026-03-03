@@ -23,7 +23,7 @@ app.include_router(api_router)
 
 Instrumentator().instrument(app)
 
-@app.get("/metrics")
+@app.get("/metrics", tags=["prometheus"])
 def metrics():
     registry = CollectorRegistry()
     multiprocess.MultiProcessCollector(registry)
