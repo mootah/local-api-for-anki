@@ -76,6 +76,9 @@ async def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
         if token.is_space:
             continue
 
+        if token.is_punct:
+            continue
+
         source = TermSource(
             originalText=originalText,
             transformedText=token.text,
@@ -86,7 +89,7 @@ async def get_term_entries(body_bytes: bytes) -> TermEntriesResponse:
         )
 
         ipa_list = await get_word_pronunciations(token.text)
-        reading = ipa_list[0] if ipa_list else ""
+        reading = ipa_list[0] if ipa_list else token.text
         headword = Headword(
             index=0,
             term=token.text,
